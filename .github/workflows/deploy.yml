@@ -1,0 +1,31 @@
+name: Docker CI/CD Pipeline
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+      - name: Build and tag Docker image
+        run: |
+          docker build -t devops-app:${{ github.sha }} .
+          docker tag devops-app:${{ github.sha }} devops-app:latest
+      - name: Test Docker container
+        run: |
+          docker run -d --name test-container -p 8080:80 devops-app:latest
+          sleep 5
+          curl -f http://localhost:8080
+          docker stop test-container
+          docker rm test-container
+      - name: CI/CD Pipeline Success
+        run: |
+          echo "🚀 CI/CD Pipeline Completed Successfully!"
+          echo "📦 Docker Image: devops-app:${{ github.sha }}"
+          echo "📝 Commit: ${{ github.event.head_commit.message }}"
+          echo "👤 Author: ${{ github.event.head_commit.author.name }}"
